@@ -309,6 +309,7 @@ export default function CheckoutPageV2() {
                 <div id="wallet_container" className="w-full mt-4"></div>
               )}
             </form>
+          </div>
 
 
           {/* Resumo */}
