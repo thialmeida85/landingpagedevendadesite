@@ -15,6 +15,18 @@ export default function SuccessPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white pt-20">
+      {/* Header com Logo */}
+      <div className="fixed top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-center">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+              <span className="text-white font-bold text-xl leading-none">V</span>
+            </div>
+            <span className="text-2xl font-bold text-slate-900 tracking-tight">Verticale</span>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         <Card className="p-8 md:p-12 text-center">
           {/* Success Icon */}

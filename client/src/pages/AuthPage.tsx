@@ -5,8 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Mail, Lock, User, ArrowLeft } from "lucide-react";
 
-const LOGO_URL = "/manus-storage/Ativo13_5e8a3b2c.png";
-
 export default function AuthPage() {
   const [, navigate] = useLocation();
   const [isLogin, setIsLogin] = useState(true);
@@ -82,7 +80,12 @@ export default function AuthPage() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="text-center mb-8">
-            <img src={LOGO_URL} alt="Verticale" className="h-12 w-auto mx-auto mb-4" />
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <div className="w-10 h-10 rounded bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+                <span className="text-white font-bold text-2xl leading-none">V</span>
+              </div>
+              <span className="text-3xl font-bold text-slate-900 tracking-tight">Verticale</span>
+            </div>
             <h1 className="text-3xl font-bold text-slate-900">
               {isLogin ? "Bem-vindo de Volta" : "Criar Conta"}
             </h1>

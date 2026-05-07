@@ -7,8 +7,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Check, Info, Server } from "lucide-react";
 
-const LOGO_URL = "/manus-storage/Ativo13_5e8a3b2c.png";
-
 const HOSTING_PLANS = [
   { id: "1year", label: "1 Ano", price: 15000, description: "R$ 150/ano" },
   { id: "2years", label: "2 Anos", price: 25000, description: "R$ 250/2 anos" },
@@ -28,9 +26,12 @@ export default function CheckoutPageV2() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const WEBSITE_PRICE = 50000; // R$ 500
+  // Verifica se a URL contém ?test=true para o produto de 1 centavo
+  const isTestMode = new URLSearchParams(window.location.search).get("test") === "true";
+  const WEBSITE_PRICE = isTestMode ? 100 : 50000; // R$ 1,00 (100) ou R$ 500 (50000)
+  const realHostingPrice = HOSTING_PLANS.find((p) => p.id === hostingPlan)?.price || 0;
   const hostingPrice = includeHosting
-    ? HOSTING_PLANS.find((p) => p.id === hostingPlan)?.price || 0
+    ? (isTestMode ? 0 : realHostingPrice)
     : 0;
   const totalPrice = WEBSITE_PRICE + hostingPrice;
 
@@ -53,18 +54,43 @@ export default function CheckoutPageV2() {
         return;
       }
 
-      // Aqui seria chamada a API tRPC para criar o pedido
-      console.log("Checkout data:", {
-        ...formData,
-        includeHosting,
-        hostingPlan,
-        totalPrice,
+      const payload = {
+        customerName: formData.name,
+        customerEmail: formData.email,
+        customerPhone: formData.phone,
+        customerCompany: formData.company || undefined,
+        hostingPlan: includeHosting ? hostingPlan : undefined,
+        totalAmount: totalPrice,
+      };
+
+      // Chamada real para o Backend e Mercado Pago
+      const response = await fetch("/api/trpc/checkout.createPreference", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // tRPC com superjson exige que os dados fiquem dentro do objeto "json"
+        body: JSON.stringify({ json: payload }),
       });
 
-      // Simular sucesso
-      setTimeout(() => {
-        navigate("/success");
-      }, 1500);
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = data.error?.message || "Erro de validação no servidor";
+        throw new Error(errorMessage);
+      }
+
+      // O tRPC + superjson retorna os dados reais em result.data.json
+      const result = data.result?.data?.json || data.result?.data || data.result;
+
+      // Redireciona para a página segura de pagamento do Mercado Pago
+      if (result?.init_point) {
+        window.location.href = result.init_point;
+      } else if (result?.orderId) {
+        navigate(`/success?order_id=${result.orderId}`);
+      } else {
+        throw new Error("Erro ao gerar link de pagamento do Mercado Pago");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao processar");
       setLoading(false);
@@ -83,7 +109,12 @@ export default function CheckoutPageV2() {
             <ArrowLeft className="w-5 h-5" />
             <span className="hidden sm:inline">Voltar</span>
           </button>
-          <img src={LOGO_URL} alt="Verticale" className="h-8 w-auto" />
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+              <span className="text-white font-bold text-xl leading-none">V</span>
+            </div>
+            <span className="text-2xl font-bold text-slate-900 tracking-tight hidden sm:block">Verticale</span>
+          </div>
           <div className="w-10" />
         </div>
       </div>
@@ -243,7 +274,7 @@ export default function CheckoutPageV2() {
 
           {/* Resumo */}
           <div className="md:col-span-1">
-            <Card className="p-6 sticky top-24 space-y-6">
+            <Card className="p-6 sticky top-24 space-y-6 shadow-xl shadow-blue-900/5 border-slate-200">
               <h3 className="text-xl font-bold text-slate-900">Resumo do Pedido</h3>
 
               <div className="space-y-4">
@@ -251,7 +282,9 @@ export default function CheckoutPageV2() {
                 <div className="pb-4 border-b border-slate-200">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <p className="font-semibold text-slate-900">Site Profissional</p>
+                      <p className="font-semibold text-slate-900">
+                        Site Profissional {isTestMode && <span className="text-red-500 text-xs ml-2 font-bold">(MODO TESTE)</span>}
+                      </p>
                       <p className="text-xs text-slate-600 mt-1">
                         Institucional ou Landing Page
                       </p>
