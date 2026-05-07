@@ -115,6 +115,8 @@ export const checkoutRouter = router({
         return {
           orderId,
           init_point: mpResult.init_point, // Link real oficial gerado
+          preferenceId: mpResult.id, // ID para a Base do Mercado Pago
+          publicKey: process.env.MERCADO_PAGO_PUBLIC_KEY || "", // Chave Pública
         };
       } catch (error) {
         console.error("Checkout error:", error);

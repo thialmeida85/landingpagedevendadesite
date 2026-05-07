@@ -13,6 +13,12 @@ const HOSTING_PLANS = [
   { id: "3years", label: "3 Anos", price: 380, description: "R$ 380/3 anos" },
 ];
 
+declare global {
+  interface Window {
+    MercadoPago: any;
+  }
+}
+
 export default function CheckoutPageV2() {
   const [, navigate] = useLocation();
   const [formData, setFormData] = useState({
@@ -25,6 +31,18 @@ export default function CheckoutPageV2() {
   const [hostingPlan, setHostingPlan] = useState("1year");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [preferenceId, setPreferenceId] = useState<string | null>(null);
+
+  // Carrega a base oficial do Mercado Pago (SDK)
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://sdk.mercadopago.com/js/v2";
+    script.async = true;
+    document.head.appendChild(script);
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
 
   // Verifica se a URL contém ?test=true para o produto de 1 centavo
   const isTestMode = new URLSearchParams(window.location.search).get("test") === "true";
@@ -87,9 +105,24 @@ export default function CheckoutPageV2() {
         throw new Error("Erro ao criar pedido");
       }
 
-      // Redirecionamento limpo, rápido e seguro para o Checkout Pro
-      if (result?.init_point) {
-        window.location.href = result.init_point;
+      // Aciona a base do Mercado Pago (Wallet Brick) sem sair do site
+      if (result?.preferenceId && result?.publicKey && window.MercadoPago) {
+        setPreferenceId(result.preferenceId);
+        setLoading(false);
+
+        const mp = new window.MercadoPago(result.publicKey, { locale: "pt-BR" });
+        const bricksBuilder = mp.bricks();
+        
+        bricksBuilder.create("wallet", "wallet_container", {
+          initialization: {
+            preferenceId: result.preferenceId,
+          },
+          customization: {
+            texts: { valueProp: 'smart_option' }
+          }
+        });
+      } else if (result?.init_point) {
+        window.location.href = result.init_point; // Fallback
       } else {
         throw new Error("Erro ao gerar link de pagamento do Mercado Pago");
       }
@@ -263,14 +296,18 @@ export default function CheckoutPageV2() {
                 </div>
               )}
 
-              {/* Submit */}
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 text-lg font-semibold rounded-lg disabled:opacity-50"
-              >
-                {loading ? "Processando..." : "Ir para Pagamento"}
-              </Button>
+              {/* Submit ou Base do Mercado Pago */}
+              {!preferenceId ? (
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 text-lg font-semibold rounded-lg disabled:opacity-50"
+                >
+                  {loading ? "Processando..." : "Ir para Pagamento"}
+                </Button>
+              ) : (
+                <div id="wallet_container" className="w-full mt-4"></div>
+              )}
             </form>
 
 
