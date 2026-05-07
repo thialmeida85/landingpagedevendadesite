@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: site500
+    runtime: node
+    buildCommand: pnpm install && pnpm build
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromSecret: database_url
+      - key: MERCADO_PAGO_ACCESS_TOKEN
+        fromSecret: mercado_pago_access_token
+      - key: MERCADO_PAGO_PUBLIC_KEY
+        fromSecret: mercado_pago_public_key
+      - key: MERCADO_PAGO_WEBHOOK_SECRET
+        fromSecret: mercado_pago_webhook_secret
+      - key: RESEND_API_KEY
+        fromSecret: resend_api_key
+      - key: RESEND_FROM_EMAIL
+        fromSecret: resend_from_email
+      - key: OWNER_EMAIL
+        fromSecret: owner_email
+      - key: VITE_APP_URL
+        fromSecret: vite_app_url
