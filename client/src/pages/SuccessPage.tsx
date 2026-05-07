@@ -60,7 +60,7 @@ export default function SuccessPage() {
               <div className="flex justify-between">
                 <span className="text-slate-600">Serviço:</span>
                 <span className="font-semibold text-slate-900">
-                  Site Institucional + Hospedagem
+                  Site Profissional (Agência Verticale)
                 </span>
               </div>
               <div className="flex justify-between">

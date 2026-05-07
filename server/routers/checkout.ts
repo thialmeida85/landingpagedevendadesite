@@ -2,7 +2,7 @@ import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import { createCustomer, createOrder, getCustomerByEmail, updateOrderPaymentStatus } from "../db";
 import { InsertCustomer, InsertOrder } from "../../drizzle/schema";
-import { sendCustomerConfirmationEmail, sendOwnerNotificationEmail } from "../services/emailService";
+import { createMercadoPagoPreference } from "../services/mercadopagoService";
 
 export const checkoutRouter = router({
   createPreference: publicProcedure
@@ -12,7 +12,7 @@ export const checkoutRouter = router({
         customerEmail: z.string().email(),
         customerPhone: z.string().min(1),
         customerCompany: z.string().optional(),
-        hostingPlan: z.enum(["1year", "2years", "3years"]),
+        hostingPlan: z.enum(["1year", "2years", "3years"]).optional(),
         totalAmount: z.number().positive(),
       })
     )
@@ -38,63 +38,38 @@ export const checkoutRouter = router({
           throw new Error("Failed to create or retrieve customer");
         }
 
-        // Hosting prices in cents
+        // Hosting prices em Reais
         const hostingPrices = {
-          "1year": 15000, // R$ 150
-          "2years": 25000, // R$ 250
-          "3years": 38000, // R$ 380
+          "1year": 150,
+          "2years": 250,
+          "3years": 380,
         };
 
-        const websitePrice = 150000; // R$ 1500 in cents
-        const hostingPrice = hostingPrices[input.hostingPlan];
-        const totalPrice = websitePrice + hostingPrice;
+        const hostingPriceReais = input.hostingPlan ? hostingPrices[input.hostingPlan] : 0;
+        const totalPriceReais = input.totalAmount; // Pega o valor real enviado pela tela (Ex: 500 ou 2)
+        const websitePriceReais = totalPriceReais - hostingPriceReais;
 
         // Create order
         const orderData: InsertOrder = {
           customerId: customer.id,
-          websiteServicePrice: websitePrice,
-          hostingPlan: input.hostingPlan,
-          hostingPrice: hostingPrice,
-          totalPrice: totalPrice,
+          websiteServicePrice: websitePriceReais * 100, // Salva em centavos no banco
+          hostingPlan: input.hostingPlan || null,
+          hostingPrice: hostingPriceReais * 100,
+          totalPrice: totalPriceReais * 100,
           paymentStatus: "pending",
         };
 
         const orderResult = await createOrder(orderData);
         const orderId = (orderResult as any).insertId;
 
-        // Send confirmation emails
-        await sendCustomerConfirmationEmail({
-          customerName: input.customerName,
-          customerEmail: input.customerEmail,
-          customerPhone: input.customerPhone,
-          customerCompany: input.customerCompany,
-          orderId,
-          websitePrice: websitePrice,
-          hostingPlan: input.hostingPlan,
-          hostingPrice: hostingPrice,
-          totalPrice: totalPrice,
-        });
-
-        await sendOwnerNotificationEmail({
-          customerName: input.customerName,
-          customerEmail: input.customerEmail,
-          customerPhone: input.customerPhone,
-          customerCompany: input.customerCompany,
-          orderId,
-          websitePrice: websitePrice,
-          hostingPlan: input.hostingPlan,
-          hostingPrice: hostingPrice,
-          totalPrice: totalPrice,
-        });
-
         // Create Mercado Pago preference
         const mpPreference = {
           items: [
             {
-              title: "Site Institucional + Hospedagem",
-              description: `Criação de site profissional com hospedagem por ${input.hostingPlan === "1year" ? "1 ano" : input.hostingPlan === "2years" ? "2 anos" : "3 anos"}`,
+              title: "Site Profissional" + (input.hostingPlan ? " + Hospedagem" : ""),
+              description: "Criação de site profissional" + (input.hostingPlan ? ` com hospedagem por ${input.hostingPlan === "1year" ? "1 ano" : input.hostingPlan === "2years" ? "2 anos" : "3 anos"}` : ""),
               quantity: 1,
-              unit_price: totalPrice / 100, // Convert cents to reais
+              unit_price: totalPriceReais, // Valor em Reais pro Mercado Pago
               currency_id: "BRL",
             },
           ],
@@ -113,15 +88,20 @@ export const checkoutRouter = router({
           },
           auto_return: "approved",
           external_reference: `order_${orderId}`,
-          notification_url: `${process.env.VITE_APP_URL || "http://localhost:3000"}/api/webhook/mercadopago`,
+          notification_url: `${process.env.VITE_APP_URL || "http://localhost:3000"}/webhook/payments`, // Rota correta!
         };
 
-        // TODO: Call Mercado Pago API to create preference
-        // For now, return mock response with order ID
+        // Chama a API oficial do Mercado Pago para gerar a cobrança
+        const mpResult = await createMercadoPagoPreference(mpPreference);
+
+        if (!mpResult) {
+          throw new Error("Erro ao comunicar com o Mercado Pago. Verifique suas credenciais (Access Token).");
+        }
+
         return {
           orderId,
           preference: mpPreference,
-          init_point: `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=mock_${orderId}`,
+          init_point: mpResult.init_point, // Link real oficial gerado
         };
       } catch (error) {
         console.error("Checkout error:", error);

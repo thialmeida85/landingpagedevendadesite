@@ -10,7 +10,7 @@ export interface EmailData {
   customerCompany?: string;
   orderId: number;
   websitePrice: number;
-  hostingPlan: string;
+  hostingPlan?: string | null;
   hostingPrice: number;
   totalPrice: number;
 }
@@ -56,7 +56,7 @@ export async function sendCustomerConfirmationEmail(data: EmailData): Promise<bo
       <ul>
         <li><strong>Número do Pedido:</strong> #${data.orderId}</li>
         <li><strong>Site Institucional:</strong> R$ ${(data.websitePrice / 100).toFixed(2)}</li>
-        <li><strong>Hospedagem (${data.hostingPlan === "1year" ? "1 ano" : data.hostingPlan === "2years" ? "2 anos" : "3 anos"}):</strong> R$ ${(data.hostingPrice / 100).toFixed(2)}</li>
+        ${data.hostingPlan && data.hostingPrice > 0 ? `<li><strong>Hospedagem (${data.hostingPlan === "1year" ? "1 ano" : data.hostingPlan === "2years" ? "2 anos" : "3 anos"}):</strong> R$ ${(data.hostingPrice / 100).toFixed(2)}</li>` : ""}
         <li><strong>Total:</strong> R$ ${(data.totalPrice / 100).toFixed(2)}</li>
       </ul>
     </div>
@@ -159,7 +159,7 @@ export async function sendOwnerNotificationEmail(data: EmailData): Promise<boole
       <h3>💰 Detalhes do Pedido</h3>
       <ul>
         <li><strong>Site Institucional:</strong> R$ ${(data.websitePrice / 100).toFixed(2)}</li>
-        <li><strong>Hospedagem (${data.hostingPlan === "1year" ? "1 ano" : data.hostingPlan === "2years" ? "2 anos" : "3 anos"}):</strong> R$ ${(data.hostingPrice / 100).toFixed(2)}</li>
+        ${data.hostingPlan && data.hostingPrice > 0 ? `<li><strong>Hospedagem (${data.hostingPlan === "1year" ? "1 ano" : data.hostingPlan === "2years" ? "2 anos" : "3 anos"}):</strong> R$ ${(data.hostingPrice / 100).toFixed(2)}</li>` : ""}
         <li><strong>Total:</strong> R$ ${(data.totalPrice / 100).toFixed(2)}</li>
       </ul>
     </div>

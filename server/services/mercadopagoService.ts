@@ -108,8 +108,18 @@ export async function processMercadoPagoWebhook(payload: any): Promise<{
   status: "approved" | "pending" | "failed";
 } | null> {
   try {
-    // Extract order ID from external_reference
-    const externalReference = payload.data?.external_reference;
+    if (payload.type !== "payment") {
+      return null;
+    }
+
+    const paymentId = payload.data?.id;
+    if (!paymentId) return null;
+
+    // Busca os detalhes oficiais do pagamento na API do Mercado Pago
+    const paymentData = await getMercadoPagoPayment(paymentId);
+    if (!paymentData) return null;
+
+    const externalReference = paymentData.external_reference;
     if (!externalReference || !externalReference.startsWith("order_")) {
       console.warn("[MP] Invalid external reference:", externalReference);
       return null;
@@ -120,13 +130,11 @@ export async function processMercadoPagoWebhook(payload: any): Promise<{
     // Map Mercado Pago status to our status
     let status: "approved" | "pending" | "failed" = "pending";
 
-    if (payload.type === "payment") {
-      const paymentStatus = payload.data?.status;
-      if (paymentStatus === "approved") {
-        status = "approved";
-      } else if (paymentStatus === "rejected" || paymentStatus === "cancelled") {
-        status = "failed";
-      }
+    const paymentStatus = paymentData.status;
+    if (paymentStatus === "approved") {
+      status = "approved";
+    } else if (paymentStatus === "rejected" || paymentStatus === "cancelled") {
+      status = "failed";
     }
 
     console.log(`[MP] Webhook processed: Order ${orderId} - Status: ${status}`);

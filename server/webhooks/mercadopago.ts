@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { processMercadoPagoWebhook } from "../services/mercadopagoService";
 import { updateOrderPaymentStatus, getOrderWithCustomer } from "../db";
-import { sendCustomerConfirmationEmail } from "../services/emailService";
+import { sendCustomerConfirmationEmail, sendOwnerNotificationEmail } from "../services/emailService";
 
 /**
  * Webhook handler for Mercado Pago payment notifications
@@ -64,7 +64,20 @@ export async function handleMercadoPagoWebhook(
           customerCompany: order.customerCompany || undefined,
           orderId,
           websitePrice,
-          hostingPlan: order.hostingPlan || "1year",
+          hostingPlan: order.hostingPlan,
+          hostingPrice,
+          totalPrice,
+        });
+
+        // Envia o e-mail de notificação de nova venda para o dono da Agência
+        await sendOwnerNotificationEmail({
+          customerName,
+          customerEmail,
+          customerPhone: order.customerPhone || "",
+          customerCompany: order.customerCompany || undefined,
+          orderId,
+          websitePrice,
+          hostingPlan: order.hostingPlan,
           hostingPrice,
           totalPrice,
         });

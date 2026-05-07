@@ -8,9 +8,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Check, Info, Server } from "lucide-react";
 
 const HOSTING_PLANS = [
-  { id: "1year", label: "1 Ano", price: 15000, description: "R$ 150/ano" },
-  { id: "2years", label: "2 Anos", price: 25000, description: "R$ 250/2 anos" },
-  { id: "3years", label: "3 Anos", price: 38000, description: "R$ 380/3 anos" },
+  { id: "1year", label: "1 Ano", price: 150, description: "R$ 150/ano" },
+  { id: "2years", label: "2 Anos", price: 250, description: "R$ 250/2 anos" },
+  { id: "3years", label: "3 Anos", price: 380, description: "R$ 380/3 anos" },
 ];
 
 export default function CheckoutPageV2() {
@@ -28,7 +28,7 @@ export default function CheckoutPageV2() {
 
   // Verifica se a URL contém ?test=true para o produto de 1 centavo
   const isTestMode = new URLSearchParams(window.location.search).get("test") === "true";
-  const WEBSITE_PRICE = isTestMode ? 100 : 50000; // R$ 1,00 (100) ou R$ 500 (50000)
+  const WEBSITE_PRICE = isTestMode ? 2 : 500; // R$ 2,00 para teste seguro ou R$ 500
   const realHostingPrice = HOSTING_PLANS.find((p) => p.id === hostingPlan)?.price || 0;
   const hostingPrice = includeHosting
     ? (isTestMode ? 0 : realHostingPrice)
@@ -244,7 +244,7 @@ export default function CheckoutPageV2() {
                               </div>
                             </label>
                             <div className="text-lg font-bold text-blue-600">
-                              R$ {(plan.price / 100).toFixed(2)}
+                              R$ {plan.price.toFixed(2)}
                             </div>
                           </div>
                         ))}
@@ -290,7 +290,7 @@ export default function CheckoutPageV2() {
                       </p>
                     </div>
                     <p className="font-bold text-slate-900">
-                      R$ {(WEBSITE_PRICE / 100).toFixed(2)}
+                      R$ {WEBSITE_PRICE.toFixed(2)}
                     </p>
                   </div>
                   <div className="space-y-1 text-xs text-slate-600">
@@ -323,7 +323,7 @@ export default function CheckoutPageV2() {
                         </p>
                       </div>
                       <p className="font-bold text-slate-900">
-                        R$ {(hostingPrice / 100).toFixed(2)}
+                        R$ {hostingPrice.toFixed(2)}
                       </p>
                     </div>
                     <div className="space-y-1 text-xs text-slate-600">
@@ -347,7 +347,7 @@ export default function CheckoutPageV2() {
                 <div className="space-y-2 pt-4">
                   <div className="flex justify-between text-slate-600">
                     <span>Subtotal</span>
-                    <span>R$ {((WEBSITE_PRICE + hostingPrice) / 100).toFixed(2)}</span>
+                    <span>R$ {(WEBSITE_PRICE + hostingPrice).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
                     <span>Parcelamento</span>
@@ -355,7 +355,7 @@ export default function CheckoutPageV2() {
                   </div>
                   <div className="flex justify-between text-2xl font-bold text-slate-900 pt-4 border-t border-slate-200">
                     <span>Total</span>
-                    <span>R$ {(totalPrice / 100).toFixed(2)}</span>
+                    <span>R$ {totalPrice.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
