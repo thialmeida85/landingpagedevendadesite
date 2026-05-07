@@ -114,7 +114,6 @@ export const checkoutRouter = router({
 
         return {
           orderId,
-          preference: mpPreference,
           init_point: mpResult.init_point, // Link real oficial gerado
         };
       } catch (error) {
