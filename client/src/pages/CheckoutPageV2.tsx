@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,13 @@ import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Check, Info, Server } from "lucide-react";
+
+// Declare MercadoPago
+declare global {
+  interface Window {
+    MercadoPago: any;
+  }
+}
 
 const HOSTING_PLANS = [
   { id: "1year", label: "1 Ano", price: 150, description: "R$ 150/ano" },
@@ -25,6 +32,23 @@ export default function CheckoutPageV2() {
   const [hostingPlan, setHostingPlan] = useState("1year");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [mp, setMp] = useState<any>(null);
+  const [brick, setBrick] = useState<any>(null);
+
+  // Load MercadoPago SDK
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://sdk.mercadopago.com/js/v2";
+    script.onload = () => {
+      const mpInstance = new window.MercadoPago(import.meta.env.VITE_MERCADO_PAGO_PUBLIC_KEY || "TEST-1234567890123456-123456-78901234567890123");
+      setMp(mpInstance);
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
 
   // Verifica se a URL contém ?test=true para o produto de 1 centavo
   const isTestMode = new URLSearchParams(window.location.search).get("test") === "true";
@@ -83,13 +107,39 @@ export default function CheckoutPageV2() {
       // O tRPC + superjson retorna os dados reais em result.data.json
       const result = data.result?.data?.json || data.result?.data || data.result;
 
-      // Redireciona para a página segura de pagamento do Mercado Pago
-      if (result?.init_point) {
-        window.location.href = result.init_point;
-      } else if (result?.orderId) {
-        navigate(`/success?order_id=${result.orderId}`);
+      if (!result?.orderId) {
+        throw new Error("Erro ao criar pedido");
+      }
+
+      // Initialize Brick with the preference ID
+      if (mp && result.preference?.id) {
+        const brickInstance = mp.bricks().create("wallet", "wallet_container", {
+          initialization: {
+            preferenceId: result.preference.id,
+            redirectMode: "modal",
+          },
+          callbacks: {
+            onReady: () => {
+              setLoading(false);
+            },
+            onSubmit: () => {
+              setLoading(true);
+            },
+            onError: (error: any) => {
+              console.error("Brick error:", error);
+              setError("Erro no processamento do pagamento");
+              setLoading(false);
+            },
+          },
+        });
+        setBrick(brickInstance);
       } else {
-        throw new Error("Erro ao gerar link de pagamento do Mercado Pago");
+        // Fallback to redirect if Brick fails
+        if (result?.init_point) {
+          window.location.href = result.init_point;
+        } else {
+          throw new Error("Erro ao gerar link de pagamento do Mercado Pago");
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao processar");
@@ -270,6 +320,9 @@ export default function CheckoutPageV2() {
                 {loading ? "Processando..." : "Ir para Pagamento"}
               </Button>
             </form>
+
+            {/* MercadoPago Wallet Container */}
+            <div id="wallet_container" className="mt-6"></div>
           </div>
 
           {/* Resumo */}

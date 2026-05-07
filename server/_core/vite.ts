@@ -39,7 +39,10 @@ export async function setupVite(app: Express, server: Server) {
         `src="/src/main.tsx?v=${nanoid()}"`
       );
       const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+      res.status(200).set({ 
+        "Content-Type": "text/html",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://http2.mlstatic.com https://www.mercadopago.com.br; style-src 'self' 'unsafe-inline' https://http2.mlstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.mercadopago.com https://http2.mlstatic.com; frame-src https://www.mercadopago.com.br;"
+      }).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);
@@ -62,6 +65,9 @@ export function serveStatic(app: Express) {
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
+    res.set({
+      "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.mercadopago.com https://http2.mlstatic.com https://www.mercadopago.com.br; style-src 'self' 'unsafe-inline' https://http2.mlstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.mercadopago.com https://http2.mlstatic.com; frame-src https://www.mercadopago.com.br;"
+    });
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
