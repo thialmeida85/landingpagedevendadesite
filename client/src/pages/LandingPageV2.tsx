@@ -9,8 +9,6 @@ import {
 } from "@/components/ui/accordion";
 import { Check, Zap, Globe, Users, Clock, Shield, Star, Quote } from "lucide-react";
 
-const LOGO_URL = "/manus-storage/Ativo13_5e8a3b2c.png";
-
 export default function LandingPageV2() {
   const [, navigate] = useLocation();
 
@@ -20,7 +18,10 @@ export default function LandingPageV2() {
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src={LOGO_URL} alt="Verticale" className="h-10 w-auto" />
+            <div className="w-8 h-8 rounded bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-md shadow-blue-500/20">
+              <span className="text-white font-bold text-xl leading-none">V</span>
+            </div>
+            <span className="text-2xl font-bold text-slate-900 tracking-tight hidden sm:block">Verticale</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a href="#beneficios" className="text-slate-600 hover:text-slate-900 transition">
@@ -484,8 +485,10 @@ export default function LandingPageV2() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-2">
-              <img src={LOGO_URL} alt="Verticale" className="h-8 w-auto" />
-              <span className="text-white font-semibold">Agencia Verticale</span>
+              <div className="w-6 h-6 rounded bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                <span className="text-white font-bold text-sm leading-none">V</span>
+              </div>
+              <span className="text-white font-semibold tracking-wide">Agência Verticale</span>
             </div>
             <div className="flex gap-6 text-sm">
               <a href="#" className="hover:text-white transition">
